@@ -94,7 +94,7 @@
         </Style>
     </Window.Resources>
 
-    <TabControl Background="#1E1E1E" BorderThickness="0">
+    <TabControl x:Name="MainTabControl" Background="#1E1E1E" BorderThickness="0">
         <TabControl.Resources>
             <Style TargetType="TabItem">
                 <Setter Property="Background" Value="#2D2D30"/>
@@ -327,3 +327,4 @@
         </TabItem>
     </TabControl>
 </Window>
+

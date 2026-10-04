@@ -96,7 +96,7 @@
 
     <!-- openedm-config.txt — deployed to ProgramData so IT can edit it centrally -->
     <ComponentGroup Id="ConfigComponents" Directory="CONFIGFOLDER">
-      <Component Id="OpenEDMConfig" Guid="D1E2F3A4-B5C6-7D8E-9F0A-1B2C3D4E5F64" Win64="yes">
+      <Component Id="OpenEDMConfig" Guid="D1E2F3A4-B5C6-7D8E-9F0A-1B2C3D4E5F64" Win64="yes" NeverOverwrite="yes">
         <File Id="OpenEDMConfigFile"
               Source="$(var.BuildOutputDir)\openedm-config.txt"
               KeyPath="yes">
@@ -104,6 +104,14 @@
         </File>
       </Component>
             </ComponentGroup>
+
+    <Property Id="CONFIG_FOUND">
+      <DirectorySearch Id="ProgramDataSearch" Path="[CommonAppDataFolder]OpenEDMShellExtension">
+        <FileSearch Id="ConfigFileSearch" Name="openedm-config.txt" />
+      </DirectorySearch>
+    </Property>
+
+    <CustomAction Id="LaunchConfigurator" FileKey="AuditReaderExe" ExeCommand="" Execute="immediate" Impersonate="yes" Return="asyncNoWait" />
 
     <!-- ═══════════════════════════════════════════════════════════
          CUSTOM ACTIONS
@@ -131,6 +139,10 @@
                   Return="ignore" />
 
     <InstallExecuteSequence>
+
+      <Custom Action="LaunchConfigurator" After="InstallFinalize">
+        NOT Installed AND NOT CONFIG_FOUND AND UILevel > 2
+      </Custom>
 
       <!-- Unregister before files are removed (uninstall/upgrade) -->
       <Custom Action="UnregisterShellExtension" Before="RemoveFiles">
@@ -162,6 +174,12 @@
 
   </Product>
 </Wix>
+
+
+
+
+
+
 
 
 
