@@ -8,7 +8,7 @@ Think of OpenEDM like a library: if you want to write in a book, you have to "ch
 
 ## 🛑 Core Office Policies
 Before using OpenEDM, please review our strict data governance policies:
-1. **Never edit files directly on the Z: or H: drive.** All modifications MUST be done in your personal A:\ drive (WIP Workspace).
+1. **Never edit files directly on the Z: or H: drive.** All modifications MUST be done in your personal `A:\` drive (WIP Workspace).
 2. **Leave meaningful notes.** When checking in a file, "updated" is not a valid note. Summarize exactly what you changed (e.g., "Updated dimensions on bracket housing").
 3. **Do not hoard locks.** If you are going on vacation or finishing for the week, check in your files or release your locks. *IT Administrators will forcefully purge active locks older than 72 hours.*
 4. **Never manually delete lock files.** Do not attempt to bypass the lock system. Let the software manage it.
@@ -21,7 +21,12 @@ Before you can edit any files, you need to download a safe copy to your personal
 1. Open **Windows Explorer** and navigate to our office server.
 2. Find the project folder you want to work on.
 3. **Right-click** on the folder and click **Sync Project to WIP**.
-4. OpenEDM is now copying those files into your personal A:\ drive workspace. 
+   
+   ![Sync Project to WIP Menu](images/01_sync_menu.png)
+
+4. OpenEDM is now copying those files into your personal `A:\` drive workspace. A progress bar will show the status.
+
+   ![Sync Progress Bar](images/02_sync_progress.png)
 
 *(Note: The files in your workspace are initially "Read-Only" to prevent accidental edits before you lock them).*
 
@@ -30,9 +35,14 @@ Before you can edit any files, you need to download a safe copy to your personal
 ## Step 2: Unlocking a File (Acquire Lock)
 You must officially claim a file before making edits so your coworkers know you are working on it.
 
-1. Open your **WIP Workspace** (A:\).
+1. Open your **WIP Workspace** (`A:\`).
 2. **Right-click** on the specific file you want to edit and click **Acquire Lock (Edit)**.
-3. OpenEDM will securely lock the file on the server under your name.
+
+   ![Acquire Lock Menu](images/03_acquire_lock.png)
+
+3. OpenEDM will securely lock the file on the server under your name. You will receive a success popup.
+
+   ![Lock Success Popup](images/04_lock_success.png)
 
 You can now open the file in AutoCAD, Word, Excel, or any other program, and edit it normally!
 
@@ -42,8 +52,14 @@ You can now open the file in AutoCAD, Word, Excel, or any other program, and edi
 When you are completely finished with your edits:
 
 1. **Right-click** the file in your WIP folder and click **Check-In Changes**.
-2. A window will pop up showing the file you are about to check in.
+
+   ![Check-In Menu](images/05_checkin_menu.png)
+
+2. The Check-In window will pop up showing the file you are about to check in.
 3. Type a brief explanation into the **Notes** box (Remember Policy #2!).
+
+   ![Check-In UI](images/06_checkin_window.png)
+
 4. Click the blue **Check In** button.
 5. OpenEDM will upload your file and release the lock so others can use it.
 
@@ -53,8 +69,11 @@ When you are completely finished with your edits:
 Because our server uses a strict Append-Only (WORM) architecture, you cannot overwrite old files. 
 
 If you try to Check-In a file and the original file is still sitting on the server, the Check-In screen will show a red warning: **"⚠ Exists on server"**. 
-- Don't panic! OpenEDM will automatically suggest a new name for your file by adding _v2 (Version 2). 
-- Leave it as _v2 (or increment it) and click **Check In**.
+
+![File Conflict Warning](images/07_conflict_warning.png)
+
+- Don't panic! OpenEDM will automatically suggest a new name for your file by adding `_v2` (Version 2). 
+- Leave it as `_v2` (or increment it) and click **Check In**.
 
 ---
 
@@ -63,4 +82,7 @@ If you made some edits but decided you want to scrap them and start over:
 
 1. **Right-click** the file in your WIP folder.
 2. Click **Release Lock (Undo)**.
+
+   ![Release Lock Menu](images/08_release_lock.png)
+
 3. OpenEDM will unlock the file on the server and undo your local changes, reverting your file back to the exact way it looked on the server.
