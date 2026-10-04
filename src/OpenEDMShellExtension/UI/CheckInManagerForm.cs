@@ -214,7 +214,22 @@ namespace OpenEDMShellExtension.UI
 
                 if (result.AffectedFiles != null && result.AffectedFiles.Count > 0)
                 {
-                    string logError = LogManager.AppendCheckInEntry(_serverRoot, result.AffectedFiles, notes);
+                                        string logError = LogManager.AppendCheckInEntry(_serverRoot, result.AffectedFiles, notes, "File Checked In");
+                    
+                    // Release orphaned locks for files renamed in the UI
+                    var originalRenames = localRenames.Select(r => r.OriginalPath).ToList();
+                    if (originalRenames.Count > 0)
+                    {
+                        foreach (string orig in originalRenames)
+                        {
+                            string srvOrig = BreadcrumbTracker.ResolveServerPath(orig, _breadcrumbRoot);
+                            if (srvOrig != null)
+                            {
+                                try { System.IO.File.Delete(FileOperations.GetLockFilePath(srvOrig)); } catch { }
+                            }
+                        }
+                        LogManager.AppendCheckInEntry(_serverRoot, originalRenames, "File renamed and checked in as new revision", "File Checked In");
+                    }
                     if (logError != null)
                     {
                         MessageBox.Show(this, $"Files were pushed successfully, but the history log could not be updated:\n\n{logError}", "History Log Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -337,3 +352,4 @@ namespace OpenEDMShellExtension.UI
         }
     }
 }
+

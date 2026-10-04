@@ -23,7 +23,7 @@ namespace OpenEDMShellExtension.Core
         //  SYNC TO OpenEDM   (Z:\CLIENTS\… → C:\OpenEDM\…)
         // ════════════════════════════════════════════════════════════════
 
-        private static string GetLockFilePath(string path)
+        public static string GetLockFilePath(string path)
         {
             string lockDir = Configuration.LockPath;
             if (!Directory.Exists(lockDir)) Directory.CreateDirectory(lockDir);
@@ -649,6 +649,24 @@ namespace OpenEDMShellExtension.Core
                 }
             }
 
+            // Auto-release locks for files that were deleted or manually renamed locally
+            if (Configuration.OpenEDMCleanup)
+            {
+                foreach (var kvp in stateDict)
+                {
+                    string expectedLocalPath = Path.Combine(breadcrumbRoot, kvp.Key);
+                    if (!File.Exists(expectedLocalPath))
+                    {
+                        string missingServerPath = BreadcrumbTracker.ResolveServerPath(expectedLocalPath, breadcrumbRoot);
+                        if (missingServerPath != null)
+                        {
+                            try { File.Delete(GetLockFilePath(missingServerPath)); } catch { }
+                            OpenEDMShellExtension.Logging.LogManager.AppendCheckInEntry(serverRoot, new List<string> { expectedLocalPath }, "File manually deleted/renamed locally", "Lock Released (Undo)");
+                        }
+                    }
+                }
+            }
+
             var files = BreadcrumbTracker.EnumerateWorkingFiles(breadcrumbRoot);
 
             foreach (string localFile in files)
@@ -933,3 +951,5 @@ namespace OpenEDMShellExtension.Core
         }
     }
 }
+
+
