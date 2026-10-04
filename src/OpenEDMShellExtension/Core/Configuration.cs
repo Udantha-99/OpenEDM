@@ -249,7 +249,7 @@ namespace OpenEDMShellExtension.Core
                             drives.Add(driveLetter);
                         break;
 
-                    case "OpenEDMPATH":
+                    case "OPENEDMPATH":
                         // Take the first non-empty line as the template.
                         if (!string.IsNullOrWhiteSpace(line))
                             _openedmPathTemplate = line;
@@ -265,7 +265,7 @@ namespace OpenEDMShellExtension.Core
                             _lockPath = line;
                         break;
                         
-                    case "OpenEDMCLEANUP":
+                    case "OPENEDMCLEANUP":
                         if (bool.TryParse(line, out bool bCleanup))
                             _openedmCleanup = bCleanup;
                         break;

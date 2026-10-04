@@ -45,6 +45,14 @@ namespace OpenEDMShellExtension.Core
                 if (!Directory.Exists(OpenEDMRoot))
                     Directory.CreateDirectory(OpenEDMRoot);
 
+                string auditLogPath = Configuration.AuditLogPath;
+                if (!string.IsNullOrWhiteSpace(auditLogPath) && !Directory.Exists(auditLogPath))
+                    Directory.CreateDirectory(auditLogPath);
+
+                string lockPath = Configuration.LockPath;
+                if (!string.IsNullOrWhiteSpace(lockPath) && !Directory.Exists(lockPath))
+                    Directory.CreateDirectory(lockPath);
+
                 string commonParent = GetCommonParentDirectory(paths);
                 if (string.IsNullOrEmpty(commonParent))
                     return OperationResult.Fail("Could not determine a common parent directory for the selected items.");

@@ -68,7 +68,7 @@ namespace OpenEDMAuditReader
                             case "SOURCEDRIVES":
                                 drives.Add(line);
                                 break;
-                            case "OpenEDMPATH":
+                            case "OPENEDMPATH":
                                 if (string.IsNullOrWhiteSpace(openedmPath)) openedmPath = line;
                                 break;
                             case "AUDITLOGPATH":
@@ -77,7 +77,7 @@ namespace OpenEDMAuditReader
                             case "LOCKPATH":
                                 if (string.IsNullOrWhiteSpace(lockPath)) lockPath = line;
                                 break;
-                            case "OpenEDMCLEANUP":
+                            case "OPENEDMCLEANUP":
                                 if (bool.TryParse(line, out bool b)) openedmCleanup = b;
                                 break;
                         }
