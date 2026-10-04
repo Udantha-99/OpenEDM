@@ -45,6 +45,15 @@ namespace OpenEDMShellExtension.Core
 
         public static string DecryptLogEntry(string privateKeyXml, string encryptedPayloadJson)
         {
+            using (var rsa = new RSACryptoServiceProvider())
+            {
+                rsa.FromXmlString(privateKeyXml);
+                return DecryptLogEntry(rsa, encryptedPayloadJson);
+            }
+        }
+
+        public static string DecryptLogEntry(RSACryptoServiceProvider rsa, string encryptedPayloadJson)
+        {
             var keyMatch = Regex.Match(encryptedPayloadJson, "\"EncryptedAesKey\"\\s*:\\s*\"([^\"]+)\"");
             var ivMatch = Regex.Match(encryptedPayloadJson, "\"AesIV\"\\s*:\\s*\"([^\"]+)\"");
             var cipherMatch = Regex.Match(encryptedPayloadJson, "\"Ciphertext\"\\s*:\\s*\"([^\"]+)\"");
@@ -58,12 +67,7 @@ namespace OpenEDMShellExtension.Core
             byte[] iv = Convert.FromBase64String(ivMatch.Groups[1].Value);
             byte[] ciphertext = Convert.FromBase64String(cipherMatch.Groups[1].Value);
 
-            byte[] aesKey;
-            using (var rsa = new RSACryptoServiceProvider())
-            {
-                rsa.FromXmlString(privateKeyXml);
-                aesKey = rsa.Decrypt(encryptedAesKey, false);
-            }
+            byte[] aesKey = rsa.Decrypt(encryptedAesKey, false);
 
             using (Aes aes = Aes.Create())
             {

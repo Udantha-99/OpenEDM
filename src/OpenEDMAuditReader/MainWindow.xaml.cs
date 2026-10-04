@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.Json;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using OpenEDMShellExtension.Core;
@@ -139,7 +141,7 @@ namespace OpenEDMAuditReader
             }
         }
 
-        private void BtnLoadLogs_Click(object sender, RoutedEventArgs e)
+        private async void BtnLoadLogs_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -168,61 +170,82 @@ namespace OpenEDMAuditReader
                     return;
                 }
 
-                var rawEvents = new List<AuditEvent>();
+                if (sender is System.Windows.Controls.Button btn) btn.IsEnabled = false;
 
-                foreach (string file in Directory.GetFiles(auditLogPath, "*.json"))
+                try
                 {
-                    try
+                    var newSessions = new List<OpenEDMSession>();
+
+                    await Task.Run(() =>
                     {
-                        string content = File.ReadAllText(file).Trim();
-                        if (string.IsNullOrWhiteSpace(content)) continue;
+                        var rawEvents = new List<AuditEvent>();
 
-                        string decryptedJson = CryptoHelper.DecryptLogEntry(privateKeyXml, content);
-                        using (JsonDocument doc = JsonDocument.Parse(decryptedJson))
+                        using (var rsa = new RSACryptoServiceProvider())
                         {
-                            var root = doc.RootElement;
-                            var timestampStr = root.GetProperty("Timestamp").GetString();
-                            if (!DateTime.TryParse(timestampStr, out var ts)) continue;
+                            rsa.FromXmlString(privateKeyXml);
 
-                            var fProp = root.TryGetProperty("Files", out var f) ? f : 
-                                        (root.TryGetProperty("FileNames", out var fn) ? fn : default);
-                            
-                            var fileNames = new List<string>();
-                            if (fProp.ValueKind == JsonValueKind.Array)
+                            foreach (string file in Directory.EnumerateFiles(auditLogPath, "*.json"))
                             {
-                                foreach (var item in fProp.EnumerateArray())
-                                    fileNames.Add(item.GetString() ?? "");
-                            }
-                            else if (fProp.ValueKind == JsonValueKind.String)
-                            {
-                                string s = fProp.GetString() ?? "";
-                                fileNames = s.Split(new[] { "; " }, StringSplitOptions.RemoveEmptyEntries).ToList();
-                            }
-
-                            if (fileNames.Count == 0) fileNames.Add("");
-
-                            foreach (var fileNameItem in fileNames)
-                            {
-                                rawEvents.Add(new AuditEvent
+                                try
                                 {
-                                    Timestamp = ts,
-                                    User = root.GetProperty("Username").GetString() ?? "",
-                                    Action = root.GetProperty("Action").GetString() ?? "",
-                                    Project = root.TryGetProperty("Project", out var p) ? (p.GetString() ?? "") : "",
-                                    File = fileNameItem
-                                });
+                                    string content = File.ReadAllText(file).Trim();
+                                    if (string.IsNullOrWhiteSpace(content)) continue;
+
+                                    string decryptedJson = CryptoHelper.DecryptLogEntry(rsa, content);
+                                using (JsonDocument doc = JsonDocument.Parse(decryptedJson))
+                                {
+                                    var root = doc.RootElement;
+                                    var timestampStr = root.GetProperty("Timestamp").GetString();
+                                    if (!DateTime.TryParse(timestampStr, out var ts)) continue;
+
+                                    var fProp = root.TryGetProperty("Files", out var f) ? f : 
+                                                (root.TryGetProperty("FileNames", out var fn) ? fn : default);
+                                    
+                                    var fileNames = new List<string>();
+                                    if (fProp.ValueKind == JsonValueKind.Array)
+                                    {
+                                        foreach (var item in fProp.EnumerateArray())
+                                            fileNames.Add(item.GetString() ?? "");
+                                    }
+                                    else if (fProp.ValueKind == JsonValueKind.String)
+                                    {
+                                        string s = fProp.GetString() ?? "";
+                                        fileNames = s.Split(new[] { "; " }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                                    }
+
+                                    if (fileNames.Count == 0) fileNames.Add("");
+
+                                    foreach (var fileNameItem in fileNames)
+                                    {
+                                        rawEvents.Add(new AuditEvent
+                                        {
+                                            Timestamp = ts,
+                                            User = root.GetProperty("Username").GetString() ?? "",
+                                            Action = root.GetProperty("Action").GetString() ?? "",
+                                            Project = root.TryGetProperty("Project", out var p) ? (p.GetString() ?? "") : "",
+                                            File = fileNameItem
+                                        });
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                                // Skip corrupted/invalid files
                             }
                         }
-                    }
-                    catch
-                    {
-                        // Skip corrupted/invalid files
-                    }
-                }
+                        }
 
-                _allSessions = CorrelateEvents(rawEvents);
-                _logsLoaded = true;
-                ApplyFilter();
+                        newSessions = CorrelateEvents(rawEvents);
+                    });
+
+                    _allSessions = newSessions;
+                    _logsLoaded = true;
+                    ApplyFilter();
+                }
+                finally
+                {
+                    if (sender is System.Windows.Controls.Button b) b.IsEnabled = true;
+                }
             }
             catch (Exception ex)
             {
@@ -235,14 +258,13 @@ namespace OpenEDMAuditReader
             var sessions = new List<OpenEDMSession>();
             var grouped = rawEvents.GroupBy(e => new { 
                 Project = e.Project.ToLowerInvariant(), 
-                User = e.User.ToLowerInvariant(), 
                 File = e.File.ToLowerInvariant() 
             });
 
             foreach (var group in grouped)
             {
                 var sorted = group.OrderBy(e => e.Timestamp)
-                                  .ThenBy(e => e.Action == "Lock Acquired" ? 0 : 1)
+                                  .ThenBy(e => e.Action == "Lock Acquired" ? 1 : 0)
                                   .ToList();
                 OpenEDMSession? activeSession = null;
 
@@ -250,6 +272,10 @@ namespace OpenEDMAuditReader
                 {
                     if (ev.Action == "Lock Acquired")
                     {
+                        if (activeSession != null)
+                        {
+                            activeSession.Status = "Abandoned";
+                        }
                         activeSession = new OpenEDMSession
                         {
                             Project = ev.Project,
