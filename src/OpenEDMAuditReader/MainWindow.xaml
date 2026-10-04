@@ -138,7 +138,7 @@
                     
                     <Button Grid.Column="1" Content="Export to CSV" Margin="0,0,10,0" Width="120" Height="35" Click="BtnExportCsv_Click"/>
                     <Button Grid.Column="2" Content="Archive Logs (>90 days)" Margin="0,0,10,0" Width="160" Height="35" Click="BtnArchive_Click"/>
-                    <Button Grid.Column="3" Content="Load Logs" Width="100" Height="35" Background="#0078D4" BorderBrush="#0078D4" Click="BtnLoadLogs_Click"/>
+                    <Button Grid.Column="3" Content="Load Logs" Width="100" Height="35" Background="#0078D4" Foreground="White" BorderBrush="#0078D4" Click="BtnLoadLogs_Click"/>
                 </Grid>
 
                 <!-- Filters -->
@@ -198,7 +198,7 @@
                     <Button Grid.Column="1" Content="Select All" Margin="0,0,10,0" Width="80" Height="35" Click="BtnSelectAllLocks_Click"/>
                     <Button Grid.Column="2" Content="Deselect All" Margin="0,0,10,0" Width="90" Height="35" Click="BtnDeselectAllLocks_Click"/>
                     <Button Grid.Column="3" Content="Force Unlock" Margin="0,0,10,0" Width="120" Height="35" Click="BtnForceUnlock_Click"/>
-                    <Button Grid.Column="4" Content="Scan Locks" Width="100" Height="35" Background="#0078D4" BorderBrush="#0078D4" Click="BtnScanLocks_Click"/>
+                    <Button Grid.Column="4" Content="Scan Locks" Width="100" Height="35" Background="#0078D4" Foreground="White" BorderBrush="#0078D4" Click="BtnScanLocks_Click"/>
                 </Grid>
 
                 <Border Grid.Row="1" CornerRadius="8" BorderBrush="{DynamicResource Border1}" BorderThickness="1" Background="{DynamicResource Bg3}" ClipToBounds="True">
@@ -222,7 +222,7 @@
 
                 <Grid Grid.Row="0" Margin="0,0,0,20">
                     <TextBlock Text="User Analytics &amp; Deep Metrics" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource Fg1}" VerticalAlignment="Center"/>
-                    <Button Content="Refresh Analytics" Width="150" Height="35" Background="#0078D4" BorderBrush="#0078D4" Click="BtnRefreshAnalytics_Click" HorizontalAlignment="Right"/>
+                    <Button Content="Refresh Analytics" Width="150" Height="35" Background="#0078D4" Foreground="White" BorderBrush="#0078D4" Click="BtnRefreshAnalytics_Click" HorizontalAlignment="Right"/>
                 </Grid>
 
                 <Grid Grid.Row="1" Margin="0,0,0,10">
@@ -281,7 +281,7 @@
                     <TextBlock Text="Project Folder:" Foreground="{DynamicResource Fg1}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <TextBox x:Name="txtIntegrityFolder" Grid.Column="1" Height="30" VerticalContentAlignment="Center"/>
                     <Button Grid.Column="2" Content="Browse" Margin="10,0,10,0" Width="80" Height="30" Click="BtnBrowseIntegrityFolder_Click"/>
-                    <Button Grid.Column="3" Content="Scan" Width="100" Height="30" Background="#0078D4" BorderBrush="#0078D4" Click="BtnRunIntegrityScan_Click"/>
+                    <Button Grid.Column="3" Content="Scan" Width="100" Height="30" Background="#0078D4" Foreground="White" BorderBrush="#0078D4" Click="BtnRunIntegrityScan_Click"/>
                 </Grid>
 
                 <Border Grid.Row="2" CornerRadius="8" BorderBrush="{DynamicResource Border1}" BorderThickness="1" Background="{DynamicResource Bg3}" ClipToBounds="True">
@@ -324,7 +324,7 @@
                 <CheckBox x:Name="chkOpenEDMCleanup" Content="Strict OpenEDM Cleanup Post-Check-In" Foreground="{DynamicResource Fg1}" Margin="0,20,0,0" Grid.Row="8"/>
 
                 <Button Content="Save Configuration" Width="150" Height="35" Margin="0,30,0,0" 
-                        Background="#0078D4" BorderBrush="#0078D4" 
+                        Background="#0078D4" Foreground="White" BorderBrush="#0078D4" 
                         HorizontalAlignment="Left" Grid.Row="9"
                         Click="BtnSaveConfig_Click"/>
             </Grid>

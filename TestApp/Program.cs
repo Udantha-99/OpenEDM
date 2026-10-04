@@ -17,10 +17,10 @@ class Program
             @"A:\{USERNAME}",
             "",
             "[AuditLogPath]",
-            @"A:\WIP_Admin_Logs",
+            @"A:\OpenEDM_Admin_Logs",
             "",
             "[LockPath]",
-            @"A:\WIP_Locks",
+            @"A:\OpenEDM_Locks",
             "",
             "[OpenEDMCleanup]",
             "True"

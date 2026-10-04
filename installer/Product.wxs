@@ -53,7 +53,20 @@
         <Directory Id="CONFIGFOLDER" Name="OpenEDMShellExtension" />
       </Directory>
 
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="OpenEDM" />
+      </Directory>
+
     </Directory>
+
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut" Guid="A1B2C3D4-E5F6-4A1B-8C9D-E0F1A2B3C4D5">
+        <Shortcut Id="ApplicationStartMenuShortcut" Name="OpenEDM Audit Reader" Description="Launch OpenEDM Audit Reader" Target="[INSTALLFOLDER]OpenEDMAuditReader.exe" WorkingDirectory="INSTALLFOLDER" />
+        <Shortcut Id="UninstallProduct" Name="Uninstall OpenEDM" Description="Uninstalls OpenEDM" Target="[SystemFolder]msiexec.exe" Arguments="/x [ProductCode]" />
+        <RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\OpenEDM" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
 
     <!-- ═══════════════════════════════════════════════════════════
          COMPONENTS
@@ -163,6 +176,7 @@
     <Feature Id="ProductFeature" Title="OpenEDM" Level="1">
       <ComponentGroupRef Id="ProductComponents" />
       <ComponentGroupRef Id="ConfigComponents" />
+      <ComponentRef Id="ApplicationShortcut" />
     </Feature>
 
     <!-- Minimal UI — shows only progress bar.
@@ -174,6 +188,8 @@
 
   </Product>
 </Wix>
+
+
 
 
 

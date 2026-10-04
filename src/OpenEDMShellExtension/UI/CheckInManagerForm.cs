@@ -101,10 +101,20 @@ namespace OpenEDMShellExtension.UI
                 }
                 else if (c is Button b)
                 {
-                    b.BackColor = txtBack;
-                    b.ForeColor = txtFore;
-                    b.FlatStyle = FlatStyle.Flat;
-                    b.FlatAppearance.BorderColor = fore;
+                    if (b.Name == "btnCheckIn")
+                    {
+                        b.BackColor = Color.FromArgb(0, 120, 212); // #0078D4
+                        b.ForeColor = Color.White;
+                        b.FlatStyle = FlatStyle.Flat;
+                        b.FlatAppearance.BorderColor = Color.FromArgb(0, 120, 212);
+                    }
+                    else
+                    {
+                        b.BackColor = txtBack;
+                        b.ForeColor = txtFore;
+                        b.FlatStyle = FlatStyle.Flat;
+                        b.FlatAppearance.BorderColor = fore;
+                    }
                 }
                 else if (c is Label l)
                 {

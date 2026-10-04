@@ -1,16 +1,16 @@
 # ═══════════════════════════════════════════════════════════════
-#  WIP Shell Extension — Configuration
+#  OpenEDM Shell Extension — Configuration
 # ═══════════════════════════════════════════════════════════════
 #
 #  Place this file:
-#    - Next to WipShellExtension.dll  (for dev/testing)
-#    - C:\ProgramData\WipShellExtension\wip-config.txt  (for GPO)
+#    - Next to OpenEDMShellExtension.dll  (for dev/testing)
+#    - C:\ProgramData\OpenEDMShellExtension\openedm-config.txt  (for GPO)
 #
 #  Lines starting with # are comments.
 #
 
 # ── Source Drives ──
-# Any mapped drive listed here will show "Check-Out to WIP"
+# Any mapped drive listed here will show "Check-Out to OpenEDM"
 # when you right-click files on it.
 # One drive letter per line. Add as many as you need.
 
@@ -21,17 +21,18 @@ J
 K
 L
 
-# ── WIP Path ──
+# ── OpenEDM Path ──
 # Where checked-out files go. Each engineer gets their own folder.
 # Use {USERNAME} as a placeholder for the Windows/AD username.
 #
 # Examples:
 #   A:\{USERNAME}         → A:\IDS-029
-#   C:\WIP\{USERNAME}     → C:\WIP\IDS-029
-#   \\server\wip\{USERNAME}  → UNC path
+#   C:\OpenEDM\{USERNAME}     → C:\OpenEDM\IDS-029
+#   \\server\openedm\{USERNAME}  → UNC path
 
-[WipPath]
+[OpenEDMPath]
 A:\{USERNAME}
 
 [AuditLogPath]
-A:\WIP_Admin_Logs
+A:\OpenEDM_Admin_Logs
+
