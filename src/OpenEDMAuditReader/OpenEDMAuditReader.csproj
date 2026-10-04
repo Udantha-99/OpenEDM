@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\OpenEDMShellExtension\Core\CryptoHelper.cs" Link="Core\CryptoHelper.cs" />
+    <Compile Include="..\OpenEDMShellExtension\Core\Configuration.cs" Link="Core\Configuration.cs" />
+    <Compile Include="..\OpenEDMShellExtension\Logging\LogManager.cs" Link="Logging\LogManager.cs" />
+    <None Include="..\OpenEDMShellExtension\openedm-config.txt" Link="openedm-config.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

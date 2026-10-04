@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  WiX v3 Installer — OpenEDM
+  ═══════════════════════════════════════
+
+  BUILD (run build-msi.ps1 — it handles everything):
+    .\installer\build-msi.ps1
+
+  SILENT INSTALL (GPO / manual):
+    msiexec /i OpenEDMShellExtension.msi /qn /l*v "%TEMP%\openedm-install.log"
+
+  SILENT UNINSTALL:
+    msiexec /x OpenEDMShellExtension.msi /qn
+
+  NOTE: The Windows 11 "Show more options" registry key must be pushed
+  separately via GPO Preferences (see deployment-guide.md).
+-->
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <Product Id="*"
+           Name="OpenEDM"
+           Language="1033"
+           Version="1.0.0.0"
+           Manufacturer="Internal Engineering Tools"
+           UpgradeCode="C7A1B2C3-D4E5-6F78-9A0B-1C2D3E4F5678">
+
+    <Package InstallerVersion="500"
+             Compressed="yes"
+             InstallScope="perMachine"
+             Description="TrueNAS OpenEDM Check-In / Check-Out Shell Extension"
+             Comments="Installs the OpenEDM context menu for Windows Explorer"
+             Platform="x64" />
+
+    <!-- Auto-remove old versions on upgrade -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version is already installed." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         DIRECTORY STRUCTURE
+         ═══════════════════════════════════════════════════════════ -->
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+
+      <!-- Install to C:\Program Files\OpenEDMShellExtension -->
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLFOLDER" Name="OpenEDMShellExtension" />
+      </Directory>
+
+      <!-- ProgramData\OpenEDMShellExtension — for openedm-config.txt -->
+      <Directory Id="CommonAppDataFolder">
+        <Directory Id="CONFIGFOLDER" Name="OpenEDMShellExtension" />
+      </Directory>
+
+    </Directory>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         COMPONENTS
+         ═══════════════════════════════════════════════════════════ -->
+
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+
+      <!-- Core shell extension DLL -->
+      <Component Id="OpenEDMShellExtensionDll" Guid="D1E2F3A4-B5C6-7D8E-9F0A-1B2C3D4E5F60" Win64="yes">
+        <File Id="MainDll"
+              Source="$(var.BuildOutputDir)\OpenEDMShellExtension.dll"
+              KeyPath="yes" />
+      </Component>
+
+      <!-- Helper EXE — spawned by the shell extension for all UI -->
+      <Component Id="OpenEDMHelperExe" Guid="D1E2F3A4-B5C6-7D8E-9F0A-1B2C3D4E5F65" Win64="yes">
+        <File Id="HelperExe"
+              Source="$(var.BuildOutputDir)\OpenEDMHelper.exe"
+              KeyPath="yes" />
+      </Component>
+
+      <!-- SharpShell dependency -->
+      <Component Id="SharpShellDll" Guid="D1E2F3A4-B5C6-7D8E-9F0A-1B2C3D4E5F61" Win64="yes">
+        <File Id="SharpShellDll"
+              Source="$(var.BuildOutputDir)\SharpShell.dll"
+              KeyPath="yes" />
+      </Component>
+
+      <!-- OpenEDMAuditReader EXE - stand-alone WPF config/audit app -->
+      <Component Id="OpenEDMAuditReaderExe" Guid="E2F3A4B5-C6D7-8E9F-0A1B-2C3D4E5F6071" Win64="yes">
+        <File Id="AuditReaderExe"
+              Source="$(var.AuditReaderDir)\OpenEDMAuditReader.exe"
+              KeyPath="yes" />
+      </Component>
+        <Component Id="OpenEDMPrivateKey" Guid="D2E3F4A5-B6C7-8D9E-0F1A-2B3C4D5E6F7A" Win64="yes">
+          <File Id="PrivateKeyXml" Source="$(var.BuildOutputDir)\private_key.xml" KeyPath="yes" />
+        </Component>
+
+            </ComponentGroup>
+
+    <!-- openedm-config.txt — deployed to ProgramData so IT can edit it centrally -->
+    <ComponentGroup Id="ConfigComponents" Directory="CONFIGFOLDER">
+      <Component Id="OpenEDMConfig" Guid="D1E2F3A4-B5C6-7D8E-9F0A-1B2C3D4E5F64" Win64="yes">
+        <File Id="OpenEDMConfigFile"
+              Source="$(var.BuildOutputDir)\openedm-config.txt"
+              KeyPath="yes">
+          <Permission User="Users" GenericAll="yes" />
+        </File>
+      </Component>
+            </ComponentGroup>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         CUSTOM ACTIONS
+         ═══════════════════════════════════════════════════════════
+
+         We use regasm.exe (ships with .NET Framework 4.x — always
+         present on Windows 10/11) instead of srm.exe so there are
+         no extra tool dependencies.
+         ═══════════════════════════════════════════════════════════ -->
+
+    <!-- Register COM shell extension (runs as SYSTEM, deferred) -->
+    <CustomAction Id="RegisterShellExtension"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand="[%SystemRoot]\Microsoft.NET\Framework64\v4.0.30319\regasm.exe &quot;[INSTALLFOLDER]OpenEDMShellExtension.dll&quot; /codebase /nologo"
+                  Execute="deferred"
+                  Impersonate="no"
+                  Return="check" />
+
+    <!-- Unregister COM shell extension before removal -->
+    <CustomAction Id="UnregisterShellExtension"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand="[%SystemRoot]\Microsoft.NET\Framework64\v4.0.30319\regasm.exe &quot;[INSTALLFOLDER]OpenEDMShellExtension.dll&quot; /unregister /nologo"
+                  Execute="deferred"
+                  Impersonate="no"
+                  Return="ignore" />
+
+    <InstallExecuteSequence>
+
+      <!-- Unregister before files are removed (uninstall/upgrade) -->
+      <Custom Action="UnregisterShellExtension" Before="RemoveFiles">
+        (REMOVE="ALL") AND (NOT UPGRADINGPRODUCTCODE)
+      </Custom>
+
+      <!-- Register after files are placed -->
+      <Custom Action="RegisterShellExtension" After="InstallFiles">
+        NOT Installed OR REINSTALL
+      </Custom>
+
+    </InstallExecuteSequence>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         FEATURE TREE
+         ═══════════════════════════════════════════════════════════ -->
+
+    <Feature Id="ProductFeature" Title="OpenEDM" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentGroupRef Id="ConfigComponents" />
+    </Feature>
+
+    <!-- Minimal UI — shows only progress bar.
+         For fully silent GPO: /qn suppresses even this. -->
+    <UIRef Id="WixUI_Minimal" />
+
+    <!-- Accept EULA automatically for silent installs -->
+    <Property Id="LicenseAccepted" Value="1" />
+
+  </Product>
+</Wix>
+
+

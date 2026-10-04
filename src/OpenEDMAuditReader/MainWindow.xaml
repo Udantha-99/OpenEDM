@@ -1,0 +1,329 @@
+<Window x:Class="OpenEDMAuditReader.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="OpenEDM Audit Dashboard" Height="700" Width="1000"
+        WindowStartupLocation="CenterScreen"
+        Background="#1E1E1E">
+    <Window.Resources>
+        <!-- Modern Button Style -->
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="#2D2D30"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#3F3F46"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3E3E42"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Modern TextBox Style -->
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="#252526"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3F3F46"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="4">
+                            <ScrollViewer x:Name="PART_ContentHost"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern DataGrid Style -->
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3F3F46"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RowBackground" Value="#1E1E1E"/>
+            <Setter Property="AlternatingRowBackground" Value="#252526"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="GridLinesVisibility" Value="None"/>
+        </Style>
+        
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#2D2D30"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        
+        <Style TargetType="DataGridCell">
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Padding="{TemplateBinding Padding}" 
+                                Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#3F3F46"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <TabControl Background="#1E1E1E" BorderThickness="0">
+        <TabControl.Resources>
+            <Style TargetType="TabItem">
+                <Setter Property="Background" Value="#2D2D30"/>
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="BorderBrush" Value="#3F3F46"/>
+                <Setter Property="Padding" Value="15,8"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TabItem">
+                            <Border Name="Border" BorderThickness="1,1,1,0" BorderBrush="#3F3F46" Background="{TemplateBinding Background}" Margin="2,0">
+                                <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Center" ContentSource="Header" Margin="{TemplateBinding Padding}"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="Border" Property="Background" Value="#1E1E1E" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </TabControl.Resources>
+        <TabItem Header="Audit Logs">
+            <Grid Margin="20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Header -->
+                <Grid Grid.Row="0" Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <TextBlock Text="Audit Dashboard" FontSize="24" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                    
+                    <Button Grid.Column="1" Content="Export to CSV" Margin="0,0,10,0" Width="120" Height="35" Click="BtnExportCsv_Click"/>
+                    <Button Grid.Column="2" Content="Archive Logs (>90 days)" Margin="0,0,10,0" Width="160" Height="35" Click="BtnArchive_Click"/>
+                    <Button Grid.Column="3" Content="Load Logs" Width="100" Height="35" Background="#0078D4" BorderBrush="#0078D4" Click="BtnLoadLogs_Click"/>
+                </Grid>
+
+                <!-- Filters -->
+                <Grid Grid.Row="1" Margin="0,0,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="250"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <TextBox x:Name="txtSearch" Height="30" VerticalContentAlignment="Center" TextChanged="Filter_Changed" ToolTip="Search Project, User, or File..."/>
+                    <TextBlock Grid.Column="0" Text="Search Project, User, or File..." Foreground="#888888" IsHitTestVisible="False" VerticalAlignment="Center" Margin="10,0,0,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Hidden"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=txtSearch}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+
+                <!-- DataGrid -->
+                <Border Grid.Row="2" CornerRadius="8" BorderBrush="#3F3F46" BorderThickness="1" Background="#252526" ClipToBounds="True">
+                    <DataGrid x:Name="dgvSessions" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Project" Binding="{Binding Project}" Width="1.5*"/>
+                            <DataGridTextColumn Header="File" Binding="{Binding File}" Width="2*"/>
+                            <DataGridTextColumn Header="User" Binding="{Binding User}" Width="*"/>
+                            <DataGridTextColumn Header="Check-Out Time" Binding="{Binding CheckOutTimeDisplay}" Width="1.5*"/>
+                            <DataGridTextColumn Header="Check-In Time" Binding="{Binding CheckInTimeDisplay}" Width="1.5*"/>
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </Grid>
+        </TabItem>
+        <TabItem Header="Active Locks">
+            <Grid Margin="20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Active Locks Manager" FontSize="24" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1" Content="Force Unlock" Margin="0,0,10,0" Width="120" Height="35" Click="BtnForceUnlock_Click"/>
+                    <Button Grid.Column="2" Content="Scan Locks" Width="100" Height="35" Background="#0078D4" BorderBrush="#0078D4" Click="BtnScanLocks_Click"/>
+                </Grid>
+
+                <Border Grid.Row="1" CornerRadius="8" BorderBrush="#3F3F46" BorderThickness="1" Background="#252526" ClipToBounds="True">
+                    <DataGrid x:Name="dgvActiveLocks" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="File Lock Path" Binding="{Binding FilePath}" Width="3*"/>
+                            <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="*"/>
+                            <DataGridTextColumn Header="Creation Date" Binding="{Binding CreationDateDisplay}" Width="1.5*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </Grid>
+        </TabItem>
+        <TabItem Header="Analytics">
+            <Grid Margin="20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,20">
+                    <TextBlock Text="User Analytics &amp; Deep Metrics" FontSize="24" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                    <Button Content="Refresh Analytics" Width="150" Height="35" Background="#0078D4" BorderBrush="#0078D4" Click="BtnRefreshAnalytics_Click" HorizontalAlignment="Right"/>
+                </Grid>
+
+                <Grid Grid.Row="1" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <GroupBox Header="Stale Locks (> 7 days)" Foreground="White" Margin="0,0,5,0">
+                        <DataGrid x:Name="dgvStaleLocks" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" Background="#252526" Foreground="White">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="User" Binding="{Binding User}" Width="*"/>
+                                <DataGridTextColumn Header="File" Binding="{Binding File}" Width="2*"/>
+                                <DataGridTextColumn Header="Days Out" Binding="{Binding DaysOut}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </GroupBox>
+                    <GroupBox Header="Average Turnaround (Hours)" Foreground="White" Grid.Column="1" Margin="5,0,0,0">
+                        <DataGrid x:Name="dgvAvgTurnaround" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" Background="#252526" Foreground="White">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="User" Binding="{Binding User}" Width="*"/>
+                                <DataGridTextColumn Header="Avg Time (Hours)" Binding="{Binding AvgTimeHours}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </GroupBox>
+                </Grid>
+
+                <GroupBox Header="Project Heatmap" Foreground="White" Grid.Row="2" Margin="0,10,0,0">
+                    <DataGrid x:Name="dgvProjectHeatmap" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" Background="#252526" Foreground="White">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Project" Binding="{Binding Project}" Width="2*"/>
+                            <DataGridTextColumn Header="Check-Ins" Binding="{Binding CheckInCount}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </GroupBox>
+            </Grid>
+        </TabItem>
+        <TabItem Header="Integrity Scanner">
+            <Grid Margin="20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,20">
+                    <TextBlock Text="WORM Integrity Scanner" FontSize="24" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                </Grid>
+                
+                <Grid Grid.Row="1" Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Project Folder:" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBox x:Name="txtIntegrityFolder" Grid.Column="1" Height="30" VerticalContentAlignment="Center"/>
+                    <Button Grid.Column="2" Content="Browse" Margin="10,0,10,0" Width="80" Height="30" Click="BtnBrowseIntegrityFolder_Click"/>
+                    <Button Grid.Column="3" Content="Scan" Width="100" Height="30" Background="#0078D4" BorderBrush="#0078D4" Click="BtnRunIntegrityScan_Click"/>
+                </Grid>
+
+                <Border Grid.Row="2" CornerRadius="8" BorderBrush="#3F3F46" BorderThickness="1" Background="#252526" ClipToBounds="True">
+                    <DataGrid x:Name="dgvIntegrityResults" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="File" Binding="{Binding File}" Width="3*"/>
+                            <DataGridTextColumn Header="Issue" Binding="{Binding Issue}" Width="2*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </Grid>
+        </TabItem>
+        <TabItem Header="Settings">
+            <Grid Margin="20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Source Drives (Format: I, J, Z on new lines)" Foreground="White" Margin="0,10,0,5" Grid.Row="0"/>
+                <TextBox x:Name="txtSourceDrives" Height="100" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Grid.Row="1"/>
+
+                <TextBlock Text="OpenEDM Workspace Path (e.g., A:\{USERNAME})" Foreground="White" Margin="0,20,0,5" Grid.Row="2"/>
+                <TextBox x:Name="txtOpenEDMPath" Height="30" VerticalContentAlignment="Center" Grid.Row="3"/>
+
+                <TextBlock Text="Audit Log Path (e.g., A:\OpenEDM_Admin_Logs)" Foreground="White" Margin="0,20,0,5" Grid.Row="4"/>
+                <TextBox x:Name="txtAuditLogPath" Height="30" VerticalContentAlignment="Center" Grid.Row="5"/>
+
+                <TextBlock Text="Lock Path (e.g., A:\OpenEDM_Locks)" Foreground="White" Margin="0,20,0,5" Grid.Row="6"/>
+                <TextBox x:Name="txtLockPath" Height="30" VerticalContentAlignment="Center" Grid.Row="7"/>
+                
+                <CheckBox x:Name="chkOpenEDMCleanup" Content="Strict OpenEDM Cleanup Post-Check-In" Foreground="White" Margin="0,20,0,0" Grid.Row="8"/>
+
+                <Button Content="Save Configuration" Width="150" Height="35" Margin="0,30,0,0" 
+                        Background="#0078D4" BorderBrush="#0078D4" 
+                        HorizontalAlignment="Left" Grid.Row="9"
+                        Click="BtnSaveConfig_Click"/>
+            </Grid>
+        </TabItem>
+    </TabControl>
+</Window>

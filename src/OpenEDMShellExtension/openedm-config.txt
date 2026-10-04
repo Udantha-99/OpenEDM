@@ -1,0 +1,37 @@
+# ═══════════════════════════════════════════════════════════════
+#  WIP Shell Extension — Configuration
+# ═══════════════════════════════════════════════════════════════
+#
+#  Place this file:
+#    - Next to WipShellExtension.dll  (for dev/testing)
+#    - C:\ProgramData\WipShellExtension\wip-config.txt  (for GPO)
+#
+#  Lines starting with # are comments.
+#
+
+# ── Source Drives ──
+# Any mapped drive listed here will show "Check-Out to WIP"
+# when you right-click files on it.
+# One drive letter per line. Add as many as you need.
+
+[SourceDrives]
+H
+I
+J
+K
+L
+
+# ── WIP Path ──
+# Where checked-out files go. Each engineer gets their own folder.
+# Use {USERNAME} as a placeholder for the Windows/AD username.
+#
+# Examples:
+#   A:\{USERNAME}         → A:\IDS-029
+#   C:\WIP\{USERNAME}     → C:\WIP\IDS-029
+#   \\server\wip\{USERNAME}  → UNC path
+
+[WipPath]
+A:\{USERNAME}
+
+[AuditLogPath]
+A:\WIP_Admin_Logs
