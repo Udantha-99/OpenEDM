@@ -26,6 +26,8 @@ namespace OpenEDMShellExtension.UI
 
             txtServerPath.Text = _serverRoot ?? "(breadcrumb not found)";
             
+            ApplyTheme();
+            
             this.Shown += (s, e) => RefreshScan();
         }
 
@@ -45,6 +47,83 @@ namespace OpenEDMShellExtension.UI
             catch (Exception ex)
             {
                 return OperationResult.Fail($"Check-in dialog error: {ex.Message}");
+            }
+        }
+
+        private void ApplyTheme()
+        {
+            bool isDarkMode = true; // default
+            try
+            {
+                using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
+                {
+                    if (key != null)
+                    {
+                        var val = key.GetValue("AppsUseLightTheme");
+                        if (val != null && (int)val == 1)
+                        {
+                            isDarkMode = false;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            Color back = isDarkMode ? Color.FromArgb(30, 30, 30) : Color.White;
+            Color fore = isDarkMode ? Color.White : Color.Black;
+            Color panelBack = isDarkMode ? Color.FromArgb(45, 45, 48) : Color.White;
+            Color textboxBack = isDarkMode ? Color.FromArgb(60, 60, 60) : Color.White;
+            Color textboxFore = isDarkMode ? Color.White : Color.Black;
+
+            this.BackColor = back;
+            this.ForeColor = fore;
+            ApplyThemeToControls(this.Controls, back, fore, panelBack, textboxBack, textboxFore);
+        }
+
+        private void ApplyThemeToControls(Control.ControlCollection controls, Color back, Color fore, Color panelBack, Color txtBack, Color txtFore)
+        {
+            foreach (Control c in controls)
+            {
+                if (c is Panel p)
+                {
+                    if (p.Name != "pnlHeader") // keep header blue
+                    {
+                        p.BackColor = panelBack;
+                        p.ForeColor = fore;
+                    }
+                    ApplyThemeToControls(p.Controls, back, fore, panelBack, txtBack, txtFore);
+                }
+                else if (c is TextBox t)
+                {
+                    t.BackColor = txtBack;
+                    t.ForeColor = txtFore;
+                    t.BorderStyle = BorderStyle.FixedSingle;
+                }
+                else if (c is Button b)
+                {
+                    b.BackColor = txtBack;
+                    b.ForeColor = txtFore;
+                    b.FlatStyle = FlatStyle.Flat;
+                    b.FlatAppearance.BorderColor = fore;
+                }
+                else if (c is Label l)
+                {
+                    if (l.Name != "lblConflict")
+                        l.ForeColor = fore;
+                }
+                else if (c is CheckBox cb)
+                {
+                    cb.ForeColor = fore;
+                }
+                else if (c is FlowLayoutPanel flp)
+                {
+                    flp.BackColor = panelBack;
+                    ApplyThemeToControls(flp.Controls, back, fore, panelBack, txtBack, txtFore);
+                }
+                else
+                {
+                    ApplyThemeToControls(c.Controls, back, fore, panelBack, txtBack, txtFore);
+                }
             }
         }
 
@@ -116,6 +195,7 @@ namespace OpenEDMShellExtension.UI
             }
             
             UpdateCheckInButtonState();
+            ApplyTheme();
         }
 
         private void UpdateCheckInButtonState()
@@ -305,8 +385,12 @@ namespace OpenEDMShellExtension.UI
 
                     originalBaseName = System.IO.Path.GetFileNameWithoutExtension(info.FileName);
                     originalExt = System.IO.Path.GetExtension(info.FileName);
+                    
+                    string suggestedName = originalBaseName;
+                    if (!suggestedName.EndsWith("_v2") && !suggestedName.EndsWith("_v3"))
+                        suggestedName += "_v2";
 
-                    txtNewName = new TextBox { Width = 300, Margin = new Padding(2, 2, 0, 0), Text = originalBaseName };
+                    txtNewName = new TextBox { Width = 300, Margin = new Padding(2, 2, 0, 0), Text = suggestedName };
                     lblExtension = new Label { Text = originalExt, AutoSize = true, Margin = new Padding(2, 5, 0, 0) };
 
                     var flowPanel = new FlowLayoutPanel
@@ -319,7 +403,7 @@ namespace OpenEDMShellExtension.UI
                     flowPanel.Controls.Add(txtNewName);
                     flowPanel.Controls.Add(lblExtension);
                     
-                    var conflictWarning = new Label { Text = "⚠ Exists on server", ForeColor = Color.Red, AutoSize = true, Margin = new Padding(10, 5, 0, 0) };
+                    var conflictWarning = new Label { Name = "lblConflict", Text = "⚠ Exists on server", ForeColor = Color.Red, AutoSize = true, Margin = new Padding(10, 5, 0, 0) };
                     flowPanel.Controls.Add(conflictWarning);
 
                     this.Controls.Add(flowPanel);
@@ -340,11 +424,15 @@ namespace OpenEDMShellExtension.UI
                 if (exists)
                 {
                     txtNewName.BackColor = Color.LightPink;
+                    txtNewName.ForeColor = Color.Black;
                     IsValid = false;
                 }
                 else
                 {
-                    txtNewName.BackColor = SystemColors.Window;
+                    var parentForm = this.FindForm();
+                    bool isDarkMode = parentForm != null && parentForm.BackColor == Color.FromArgb(30, 30, 30);
+                    txtNewName.BackColor = isDarkMode ? Color.FromArgb(60, 60, 60) : Color.White;
+                    txtNewName.ForeColor = isDarkMode ? Color.White : Color.Black;
                     IsValid = true;
                 }
                 ValidationChanged?.Invoke(this, EventArgs.Empty);

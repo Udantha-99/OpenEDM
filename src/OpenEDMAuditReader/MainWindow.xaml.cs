@@ -21,7 +21,49 @@ namespace OpenEDMAuditReader
         public MainWindow()
         {
             InitializeComponent();
+            ApplyTheme();
             this.Loaded += MainWindow_Loaded;
+        }
+
+        private void ApplyTheme()
+        {
+            bool isDarkMode = true;
+            try
+            {
+                using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
+                {
+                    if (key != null)
+                    {
+                        var val = key.GetValue("AppsUseLightTheme");
+                        if (val != null && (int)val == 1)
+                        {
+                            isDarkMode = false;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            var resources = App.Current.Resources;
+            
+            if (isDarkMode)
+            {
+                resources["Bg1"] = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1E1E1E"));
+                resources["Bg2"] = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#2D2D30"));
+                resources["Bg3"] = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#252526"));
+                resources["Border1"] = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#3F3F46"));
+                resources["HoverBg"] = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#3E3E42"));
+                resources["Fg1"] = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.White);
+            }
+            else
+            {
+                resources["Bg1"] = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#FFFFFF"));
+                resources["Bg2"] = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#F3F3F3"));
+                resources["Bg3"] = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#FAFAFA"));
+                resources["Border1"] = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#D0D0D0"));
+                resources["HoverBg"] = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#E5E5E5"));
+                resources["Fg1"] = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Black);
+            }
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -467,22 +509,35 @@ namespace OpenEDMAuditReader
             dgvActiveLocks.ItemsSource = locks;
         }
 
+        private void BtnSelectAllLocks_Click(object sender, RoutedEventArgs e)
+        {
+            dgvActiveLocks.SelectAll();
+        }
+
+        private void BtnDeselectAllLocks_Click(object sender, RoutedEventArgs e)
+        {
+            dgvActiveLocks.UnselectAll();
+        }
+
         private void BtnForceUnlock_Click(object sender, RoutedEventArgs e)
         {
-            var selected = dgvActiveLocks.SelectedItem as ActiveLockInfo;
-            if (selected == null)
+            var selectedItems = dgvActiveLocks.SelectedItems.Cast<ActiveLockInfo>().ToList();
+            if (selectedItems.Count == 0)
             {
                 MessageBox.Show("Please select a lock to force unlock.", "No Selection", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             
-            if (MessageBox.Show($"Are you sure you want to force unlock {selected.FilePath}?", "Confirm Unlock", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            if (MessageBox.Show($"Are you sure you want to force unlock {selectedItems.Count} lock(s)?", "Confirm Unlock", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
             {
                 try
                 {
-                    File.Delete(selected.FilePath);
-                    OpenEDMShellExtension.Logging.LogManager.AppendCheckInEntry("ForceUnlock", new List<string> { selected.FilePath }, "Admin Force Unlock", "Admin Force Unlock");
-                    MessageBox.Show("Lock removed.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    foreach (var selected in selectedItems)
+                    {
+                        File.Delete(selected.FilePath);
+                        OpenEDMShellExtension.Logging.LogManager.AppendCheckInEntry("ForceUnlock", new List<string> { selected.FilePath }, "Admin Force Unlock", "Admin Force Unlock");
+                    }
+                    MessageBox.Show($"{selectedItems.Count} lock(s) removed.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     BtnScanLocks_Click(null, null);
                 }
                 catch (Exception ex)

@@ -73,6 +73,20 @@ namespace OpenEDMShellExtension.UI
             this.lblFiles.Text      = "FILES TO CHECK IN";
             this.lblFiles.Name      = "lblFiles";
 
+            this.btnSelectAll = new System.Windows.Forms.Button();
+            this.btnSelectAll.Location = new System.Drawing.Point(410, 110);
+            this.btnSelectAll.Size = new System.Drawing.Size(80, 24);
+            this.btnSelectAll.Text = "Select All";
+            this.btnSelectAll.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.btnSelectAll.Click += (s, e) => { foreach (var r in _rows) r.ChkInclude.Checked = true; };
+
+            this.btnDeselectAll = new System.Windows.Forms.Button();
+            this.btnDeselectAll.Location = new System.Drawing.Point(495, 110);
+            this.btnDeselectAll.Size = new System.Drawing.Size(90, 24);
+            this.btnDeselectAll.Text = "Deselect All";
+            this.btnDeselectAll.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.btnDeselectAll.Click += (s, e) => { foreach (var r in _rows) r.ChkInclude.Checked = false; };
+
             this.pnlFiles.Location           = new System.Drawing.Point(14, 136);
             this.pnlFiles.Name               = "pnlFiles";
             this.pnlFiles.Size               = new System.Drawing.Size(572, 160);
@@ -153,6 +167,8 @@ namespace OpenEDMShellExtension.UI
             this.Controls.Add(this.lblPathCaption);
             this.Controls.Add(this.txtServerPath);
             this.Controls.Add(this.lblFiles);
+            this.Controls.Add(this.btnSelectAll);
+            this.Controls.Add(this.btnDeselectAll);
             this.Controls.Add(this.pnlFiles);
             this.Controls.Add(this.lblNotes);
             this.Controls.Add(this.txtNotes);
@@ -169,6 +185,8 @@ namespace OpenEDMShellExtension.UI
         private System.Windows.Forms.Label          lblPathCaption;
         private System.Windows.Forms.TextBox        txtServerPath;
         private System.Windows.Forms.Label          lblFiles;
+        private System.Windows.Forms.Button         btnSelectAll;
+        private System.Windows.Forms.Button         btnDeselectAll;
         private System.Windows.Forms.Panel          pnlFiles;
         private System.Windows.Forms.Label          lblNotes;
         private System.Windows.Forms.TextBox        txtNotes;
