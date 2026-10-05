@@ -18,7 +18,7 @@ namespace OpenEDMShellExtension.Core
 
     public static class CryptoHelper
     {
-        private const string EmbeddedPublicKey = "<RSAKeyValue><Modulus>znAPG8iouxldGWNCMXEJE7/74GPO8IoGVU+zAnzR02Fhn+vvt7yF1XVM61LwafAHlrYDjxFf24gBNg0oJ8cJjCi9TaH8r2m+hmBR28NwUFdTAs1oDi5ocz9oGDp+B2xzQ+xpHV0X8CobrjQTFp1tKEdrmrCG3C3t27lhBmrmbu7+6xclnd7J0vVltsFXEgRZEVmyUlJt6PLVghbOG87xk3dGND5mJYV73RuH6tAh5CPtD4EtG8VTZ5PU8YcxNahnEGZdtRynwNaY24jMKYmfqvI/1AU1G2eOo1kw0ZZ8aPHxvpokBTi8Fb0+74d/PUvoz98KHNxSv1nnng8aAHP+EQ==</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";
+        private const string EmbeddedPublicKey = "<RSAKeyValue><Modulus>vnC5ZnQAdLtayDA8yr6z/evoewh5k4vWR20rVT8FntLvunsp4rF8x4Ph+7VrYef0TxNRI8ECmR1UC/Ha9fvn93N0duBAsLtv5DnIRw6V1a5cO21x49V3rW5284qlpUh1vXOSDO+53DRwlFNqYphTVAvfGywDY71KAWecunbz1XXkhY3IWUdQMVesJCq7iLilAWVe4tDLfO2CEPQVm3V8/v1l28+PAahZ7EitQ1zRjaQAELe8thkPAC/zAjxLqiB+1tROA17XIPrBvIFDdq9U1Bba79njU4lHzBo8To8aW7fIbsMqz12eHB546gNRNNN3MSAvBHE4K8VbtGbvgiLEHQ==</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";
 
         public static string EncryptLogEntry(string jsonLog)
         {
@@ -91,3 +91,4 @@ namespace OpenEDMShellExtension.Core
         }
     }
 }
+

@@ -177,6 +177,10 @@ namespace OpenEDMAuditReader
                 Configuration.Reload();
                 MessageBox.Show("Configuration saved successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
+            catch (UnauthorizedAccessException)
+            {
+                MessageBox.Show("Access Denied: You must run the OpenEDM Audit Reader as Administrator (Right-click -> 'Run as administrator') to modify the global configuration file.", "Admin Rights Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
             catch (Exception ex)
             {
                 MessageBox.Show("Error saving config: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -190,8 +194,18 @@ namespace OpenEDMAuditReader
                 string privateKeyPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "private_key.xml");
                 if (!File.Exists(privateKeyPath))
                 {
-                    MessageBox.Show("Private key not found at: " + privateKeyPath, "Access Denied", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
+                    var dlg = new Microsoft.Win32.OpenFileDialog
+                    {
+                        Title = "Select Private Key (private_key.xml)",
+                        Filter = "XML Files (*.xml)|*.xml|All Files (*.*)|*.*",
+                        CheckFileExists = true
+                    };
+                    
+                    if (dlg.ShowDialog() != true)
+                    {
+                        return; // User cancelled
+                    }
+                    privateKeyPath = dlg.FileName;
                 }
                 string privateKeyXml = File.ReadAllText(privateKeyPath);
 
@@ -298,9 +312,38 @@ namespace OpenEDMAuditReader
         private List<OpenEDMSession> CorrelateEvents(List<AuditEvent> rawEvents)
         {
             var sessions = new List<OpenEDMSession>();
-            var grouped = rawEvents.GroupBy(e => new { 
-                Project = e.Project.ToLowerInvariant(), 
-                File = e.File.ToLowerInvariant() 
+
+            var normalEvents = rawEvents.Where(e => e.Project != "ForceUnlock" && e.Action != "Admin Force Unlock").ToList();
+            var forceUnlocks = rawEvents.Where(e => e.Project == "ForceUnlock" || e.Action == "Admin Force Unlock").ToList();
+
+            var grouped = normalEvents.GroupBy(e => 
+            {
+                string serverPath = e.File;
+                string projName = System.IO.Path.GetFileName(e.Project.TrimEnd('\\', '/'));
+                if (!string.IsNullOrEmpty(projName))
+                {
+                    string[] segments = e.File.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
+                    int matchIdx = -1;
+                    for (int i = segments.Length - 2; i >= 0; i--)
+                    {
+                        string seg = segments[i];
+                        if (string.Equals(seg, projName, StringComparison.OrdinalIgnoreCase) ||
+                            (seg.StartsWith(projName + "_", StringComparison.OrdinalIgnoreCase) && int.TryParse(seg.Substring(projName.Length + 1), out _)))
+                        {
+                            matchIdx = i;
+                            break;
+                        }
+                    }
+                    if (matchIdx >= 0 && matchIdx < segments.Length - 1)
+                    {
+                        string relative = string.Join("\\", segments.Skip(matchIdx + 1));
+                        serverPath = System.IO.Path.Combine(e.Project, relative);
+                    }
+                }
+                return new { 
+                    Project = e.Project.ToLowerInvariant(), 
+                    ServerPath = serverPath.ToLowerInvariant()
+                };
             });
 
             foreach (var group in grouped)
@@ -310,7 +353,23 @@ namespace OpenEDMAuditReader
                                   .ToList();
                 OpenEDMSession? activeSession = null;
 
-                foreach (var ev in sorted)
+                string expectedLockName = "";
+                using (var sha = System.Security.Cryptography.SHA256.Create())
+                {
+                    byte[] hash = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(group.Key.ServerPath));
+                    expectedLockName = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant() + ".openedmlock";
+                }
+
+                var matchingForceUnlocks = forceUnlocks
+                    .Where(f => f.File.EndsWith(expectedLockName, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                var allEventsForFile = sorted.Concat(matchingForceUnlocks)
+                    .OrderBy(e => e.Timestamp)
+                    .ThenBy(e => e.Action == "Lock Acquired" ? 1 : 0)
+                    .ToList();
+
+                foreach (var ev in allEventsForFile)
                 {
                     if (ev.Action == "Lock Acquired")
                     {
@@ -318,11 +377,35 @@ namespace OpenEDMAuditReader
                         {
                             activeSession.Status = "Abandoned";
                         }
+                        
+                        string sPath = ev.File;
+                        string projName = System.IO.Path.GetFileName(ev.Project.TrimEnd('\\', '/'));
+                        if (!string.IsNullOrEmpty(projName))
+                        {
+                            string[] segments = ev.File.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
+                            int matchIdx = -1;
+                            for (int i = segments.Length - 2; i >= 0; i--)
+                            {
+                                string seg = segments[i];
+                                if (string.Equals(seg, projName, StringComparison.OrdinalIgnoreCase) ||
+                                    (seg.StartsWith(projName + "_", StringComparison.OrdinalIgnoreCase) && int.TryParse(seg.Substring(projName.Length + 1), out _)))
+                                {
+                                    matchIdx = i;
+                                    break;
+                                }
+                            }
+                            if (matchIdx >= 0 && matchIdx < segments.Length - 1)
+                            {
+                                string relative = string.Join("\\", segments.Skip(matchIdx + 1));
+                                sPath = System.IO.Path.Combine(ev.Project, relative);
+                            }
+                        }
+
                         activeSession = new OpenEDMSession
                         {
                             Project = ev.Project,
                             User = ev.User,
-                            File = ev.File,
+                            File = sPath,
                             CheckOutTime = ev.Timestamp,
                             Status = "Checked Out"
                         };
@@ -343,6 +426,15 @@ namespace OpenEDMAuditReader
                         {
                             activeSession.CheckInTime = ev.Timestamp;
                             activeSession.Status = "Aborted";
+                            activeSession = null;
+                        }
+                    }
+                    else if (ev.Action == "Admin Force Unlock")
+                    {
+                        if (activeSession != null)
+                        {
+                            activeSession.CheckInTime = ev.Timestamp;
+                            activeSession.Status = "Force Unlocked";
                             activeSession = null;
                         }
                     }
@@ -608,7 +700,7 @@ namespace OpenEDMAuditReader
             }
         }
 
-        private void BtnRunIntegrityScan_Click(object sender, RoutedEventArgs e)
+        private async void BtnRunIntegrityScan_Click(object sender, RoutedEventArgs e)
         {
             string folder = txtIntegrityFolder.Text.Trim();
             if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder))
@@ -623,30 +715,36 @@ namespace OpenEDMAuditReader
                 return;
             }
 
-            var issues = new List<IntegrityIssueInfo>();
+            if (sender is System.Windows.Controls.Button btn) btn.IsEnabled = false;
+
             try
             {
-                var files = Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories);
-                foreach (var file in files)
+                var issues = await Task.Run(() =>
                 {
-                    if (file.EndsWith(".openedmlock", StringComparison.OrdinalIgnoreCase)) continue;
-
-                    var lastWrite = File.GetLastWriteTime(file);
-                    var relatedSessions = _allSessions.Where(s => s.Status == "Checked In" && s.File != null && s.File.Equals(System.IO.Path.GetFileName(file), StringComparison.OrdinalIgnoreCase)).ToList();
-
-                    if (relatedSessions.Count == 0)
+                    var result = new List<IntegrityIssueInfo>();
+                    var files = Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories);
+                    foreach (var file in files)
                     {
-                        issues.Add(new IntegrityIssueInfo { File = file, Issue = "No matching encrypted check-in log" });
-                    }
-                    else
-                    {
-                        var lastCheckIn = relatedSessions.Max(s => s.CheckInTime);
-                        if (lastCheckIn.HasValue && lastWrite > lastCheckIn.Value.AddMinutes(5)) // add buffer
+                        if (file.EndsWith(".openedmlock", StringComparison.OrdinalIgnoreCase)) continue;
+
+                        var lastWrite = File.GetLastWriteTime(file);
+                        var relatedSessions = _allSessions.Where(s => s.Status == "Checked In" && s.File != null && s.File.Equals(file, StringComparison.OrdinalIgnoreCase)).ToList();
+
+                        if (relatedSessions.Count == 0)
                         {
-                            issues.Add(new IntegrityIssueInfo { File = file, Issue = "File is significantly newer than the last logged Check-In (Suspicious / Untracked Modification)" });
+                            result.Add(new IntegrityIssueInfo { File = file, Issue = "No matching encrypted check-in log" });
+                        }
+                        else
+                        {
+                            var lastCheckIn = relatedSessions.Max(s => s.CheckInTime);
+                            if (lastCheckIn.HasValue && lastWrite > lastCheckIn.Value.AddMinutes(5)) // add buffer
+                            {
+                                result.Add(new IntegrityIssueInfo { File = file, Issue = "File is significantly newer than the last logged Check-In (Suspicious / Untracked Modification)" });
+                            }
                         }
                     }
-                }
+                    return result;
+                });
                 
                 dgvIntegrityResults.ItemsSource = issues;
                 
@@ -658,6 +756,10 @@ namespace OpenEDMAuditReader
             catch (Exception ex)
             {
                 MessageBox.Show("Error running scan: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                if (sender is System.Windows.Controls.Button b) b.IsEnabled = true;
             }
         }
     }
@@ -717,5 +819,7 @@ namespace OpenEDMAuditReader
         public string Issue { get; set; } = string.Empty;
     }
 }
+
+
 
 

@@ -42,17 +42,17 @@ True
 ## Using OpenEDM (Public User Guide)
 
 ### 1. Syncing Projects (Check-Out)
-Right-click any folder on your configured `SourceDrives` and select **Sync Project to WIP**. 
+Right-click any folder on your configured `SourceDrives` and select **Check Out**. 
 - OpenEDM will copy the files into your local `OpenEDMPath` workspace and flag them as Read-Only.
 - A hidden `.sourcepath.txt` is created to remember where the files came from.
 
 ### 2. Acquiring Locks
-Inside your local workspace, right-click the file you want to edit and select **Acquire Lock (Edit)**.
+Inside your local workspace, right-click the file you want to edit and select **Acquire Lock**.
 - A `.openedmlock` sidecar is instantly dropped into the `LockPath` directory on the server, reserving the file under your Windows Username.
 - The local Read-Only flag is removed so you can work.
 
 ### 3. Checking In
-When finished, right-click the file and select **Check-In Changes**.
+When finished, right-click the file and select **Check In**.
 - The UI allows you to add commit notes and handles bulk check-ins.
 - If your server blocks overwrites, OpenEDM will visually flag the file and prompt you to save it as a new revision (e.g., `_v2`).
 - Upon success, the `.openedmlock` is deleted and the event is written to the encrypted Audit Log.
@@ -62,3 +62,4 @@ Run the included PowerShell script to compile the C# assemblies, encrypt payload
 ```powershell
 .\installer\build-msi.ps1
 ```
+
