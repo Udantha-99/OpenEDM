@@ -68,11 +68,6 @@ namespace OpenEDMHelper
                     OperationResult result = FileOperations.ReleaseLock(arg);
                     ShowResult(result, "Release Lock", "Release Unsuccessful");
                 }
-                else if (command == "batchacquire")
-                {
-                    OperationResult result = BatchOperations.BatchAcquire(arg);
-                    ShowResult(result, "Acquire Lock", "Lock Acquisition Unsuccessful");
-                }
             }
             catch (Exception ex)
             {

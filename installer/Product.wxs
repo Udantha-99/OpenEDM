@@ -101,9 +101,6 @@
               Source="$(var.AuditReaderDir)\OpenEDMAuditReader.exe"
               KeyPath="yes" />
       </Component>
-        <Component Id="OpenEDMPrivateKey" Guid="D2E3F4A5-B6C7-8D9E-0F1A-2B3C4D5E6F7A" Win64="yes">
-          <File Id="PrivateKeyXml" Source="$(var.BuildOutputDir)\private_key.xml" KeyPath="yes" />
-        </Component>
 
             </ComponentGroup>
 
@@ -113,7 +110,6 @@
         <File Id="OpenEDMConfigFile"
               Source="$(var.BuildOutputDir)\openedm-config.txt"
               KeyPath="yes">
-          <Permission User="Users" GenericAll="yes" />
         </File>
       </Component>
             </ComponentGroup>

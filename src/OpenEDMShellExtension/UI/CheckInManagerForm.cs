@@ -137,7 +137,7 @@ namespace OpenEDMShellExtension.UI
             }
         }
 
-        private void RefreshScan()
+        private async void RefreshScan()
         {
             lblStatus.Text = "Scanning files...";
             lblStatus.ForeColor = Color.Blue;
@@ -147,7 +147,7 @@ namespace OpenEDMShellExtension.UI
 
             try
             {
-                _changes = FileOperations.AnalyzeChanges(_breadcrumbRoot);
+                _changes = await System.Threading.Tasks.Task.Run(() => FileOperations.AnalyzeChanges(_breadcrumbRoot));
                 PopulateList();
             }
             catch (Exception ex)
@@ -383,7 +383,7 @@ namespace OpenEDMShellExtension.UI
                     Text = info.RelativePath + (hasConflict ? "" : $"  [{info.ChangeTypeDisplay}]"),
                     AutoSize = true,
                     Location = new Point(5, 8),
-                    Checked = true
+                    Checked = info.ChangeType != FileChangeType.Unchanged
                 };
                 this.Controls.Add(ChkInclude);
 
@@ -418,7 +418,16 @@ namespace OpenEDMShellExtension.UI
 
                     this.Controls.Add(flowPanel);
 
-                    txtNewName.TextChanged += async (s, e) => await ValidateNameAsync();
+                    txtNewName.TextChanged += async (s, e) => {
+                        var invalidChars = System.IO.Path.GetInvalidFileNameChars();
+                        string t = txtNewName.Text;
+                        if (t.IndexOfAny(invalidChars) >= 0) {
+                            int selStart = txtNewName.SelectionStart;
+                            txtNewName.Text = string.Join("", t.Split(invalidChars));
+                            txtNewName.SelectionStart = Math.Min(selStart, txtNewName.Text.Length);
+                        }
+                        await ValidateNameAsync();
+                    };
 
                     _ = ValidateNameAsync();
                 }

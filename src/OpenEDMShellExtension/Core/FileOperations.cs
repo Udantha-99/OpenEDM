@@ -27,8 +27,12 @@ namespace OpenEDMShellExtension.Core
         {
             string lockDir = Configuration.LockPath;
             if (!Directory.Exists(lockDir)) Directory.CreateDirectory(lockDir);
-            string safeName = path.Replace(":", "_").Replace("\\", "_").Replace("/", "_");
-            return Path.Combine(lockDir, safeName + ".openedmlock");
+            using (var sha = System.Security.Cryptography.SHA256.Create())
+            {
+                byte[] hash = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(path.ToLowerInvariant()));
+                string safeName = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+                return Path.Combine(lockDir, safeName + ".openedmlock");
+            }
         }
 
         public static OperationResult SyncToOpenEDM(IEnumerable<string> serverPaths, IProgress<int> progress = null)
@@ -229,6 +233,8 @@ namespace OpenEDMShellExtension.Core
 
                 OpenEDMShellExtension.Logging.LogManager.AppendCheckInEntry(serverRoot, new List<string> { localFilePath }, "", "Lock Acquired");
 
+                UpdateStateFile(breadcrumbRoot, new List<string> { localFilePath });
+
                 return OperationResult.Ok("Lock acquired successfully.", new List<string> { localFilePath });
             }
             catch (Exception ex)
@@ -280,10 +286,10 @@ namespace OpenEDMShellExtension.Core
                     try
                     {
                         var remainingFiles = Directory.GetFiles(breadcrumbRoot, "*.*", SearchOption.AllDirectories)
-                            .Where(f => !f.EndsWith(".sourcepath.txt", StringComparison.OrdinalIgnoreCase) && 
-                                        !f.EndsWith(".openedmstate", StringComparison.OrdinalIgnoreCase) &&
-                                        !f.EndsWith("Thumbs.db", StringComparison.OrdinalIgnoreCase) &&
-                                        !f.EndsWith("desktop.ini", StringComparison.OrdinalIgnoreCase))
+                            .Where(f => !string.Equals(System.IO.Path.GetFileName(f), ".sourcepath.txt", StringComparison.OrdinalIgnoreCase) && 
+                                        !string.Equals(System.IO.Path.GetFileName(f), ".openedmstate", StringComparison.OrdinalIgnoreCase) &&
+                                        !string.Equals(System.IO.Path.GetFileName(f), "Thumbs.db", StringComparison.OrdinalIgnoreCase) &&
+                                        !string.Equals(System.IO.Path.GetFileName(f), "desktop.ini", StringComparison.OrdinalIgnoreCase))
                             .ToList();
 
                         if (remainingFiles.Count == 0)
@@ -323,11 +329,24 @@ namespace OpenEDMShellExtension.Core
                 if (serverFilePath == null)
                     return OperationResult.Fail("Could not resolve server path.");
 
+                string currentUser = Environment.UserDomainName + "\\" + Environment.UserName;
                 string lockFile = GetLockFilePath(serverFilePath);
                 
                 if (File.Exists(lockFile))
                 {
-                    try { File.Delete(lockFile); } catch { }
+                    try 
+                    {
+                        string lockedBy = File.ReadAllText(lockFile).Trim();
+                        if (string.Equals(lockedBy, currentUser, StringComparison.OrdinalIgnoreCase))
+                        {
+                            File.Delete(lockFile); 
+                        }
+                        else 
+                        {
+                            return OperationResult.Fail($"Cannot release lock. Locked by {lockedBy}");
+                        }
+                    } 
+                    catch { }
                 }
 
                 if (File.Exists(serverFilePath))
@@ -547,10 +566,10 @@ namespace OpenEDMShellExtension.Core
                 try
                 {
                     var remainingFiles = Directory.GetFiles(breadcrumbRoot, "*.*", SearchOption.AllDirectories)
-                        .Where(f => !f.EndsWith(".sourcepath.txt", StringComparison.OrdinalIgnoreCase) && 
-                                    !f.EndsWith(".openedmstate", StringComparison.OrdinalIgnoreCase) &&
-                                    !f.EndsWith("Thumbs.db", StringComparison.OrdinalIgnoreCase) &&
-                                    !f.EndsWith("desktop.ini", StringComparison.OrdinalIgnoreCase))
+                            .Where(f => !string.Equals(System.IO.Path.GetFileName(f), ".sourcepath.txt", StringComparison.OrdinalIgnoreCase) && 
+                                        !string.Equals(System.IO.Path.GetFileName(f), ".openedmstate", StringComparison.OrdinalIgnoreCase) &&
+                                        !string.Equals(System.IO.Path.GetFileName(f), "Thumbs.db", StringComparison.OrdinalIgnoreCase) &&
+                                        !string.Equals(System.IO.Path.GetFileName(f), "desktop.ini", StringComparison.OrdinalIgnoreCase))
                         .ToList();
 
                     if (remainingFiles.Count == 0)
@@ -561,6 +580,8 @@ namespace OpenEDMShellExtension.Core
                 }
                 catch { }
             }
+
+            try { UpdateStateFile(breadcrumbRoot, BreadcrumbTracker.EnumerateWorkingFiles(breadcrumbRoot)); } catch { }
 
             if (errors.Count == 0)
             {
@@ -585,10 +606,27 @@ namespace OpenEDMShellExtension.Core
                 string serverRoot = BreadcrumbTracker.ReadBreadcrumb(openedmRoot);
                 if (!string.IsNullOrEmpty(serverRoot))
                 {
-                    string lockFile = GetLockFilePath(serverRoot);
-                    if (File.Exists(lockFile))
+                    string currentUser = Environment.UserDomainName + "\\" + Environment.UserName;
+                    var localFiles = BreadcrumbTracker.EnumerateWorkingFiles(openedmRoot);
+                    foreach (var localFile in localFiles)
                     {
-                        try { File.Delete(lockFile); } catch { }
+                        string serverFilePath = BreadcrumbTracker.ResolveServerPath(localFile, openedmRoot);
+                        if (serverFilePath != null)
+                        {
+                            string fileLockPath = GetLockFilePath(serverFilePath);
+                            if (File.Exists(fileLockPath))
+                            {
+                                try
+                                {
+                                    string lockedBy = File.ReadAllText(fileLockPath).Trim();
+                                    if (string.Equals(lockedBy, currentUser, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        File.Delete(fileLockPath);
+                                    }
+                                }
+                                catch { }
+                            }
+                        }
                     }
                     
                     OpenEDMShellExtension.Logging.LogManager.AppendCheckInEntry(serverRoot, new List<string>(), "", "UNDO CHECK-OUT");
@@ -668,8 +706,19 @@ namespace OpenEDMShellExtension.Core
                         string missingServerPath = BreadcrumbTracker.ResolveServerPath(expectedLocalPath, breadcrumbRoot);
                         if (missingServerPath != null)
                         {
-                            try { File.Delete(GetLockFilePath(missingServerPath)); } catch { }
-                            OpenEDMShellExtension.Logging.LogManager.AppendCheckInEntry(serverRoot, new List<string> { expectedLocalPath }, "File manually deleted/renamed locally", "Lock Released (Undo)");
+                            try 
+                            { 
+                                string lockFilePath = GetLockFilePath(missingServerPath);
+                                if (File.Exists(lockFilePath))
+                                {
+                                    string lockedBy = File.ReadAllText(lockFilePath).Trim();
+                                    if (string.Equals(lockedBy, currentUser, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        File.Delete(lockFilePath); 
+                                        OpenEDMShellExtension.Logging.LogManager.AppendCheckInEntry(serverRoot, new List<string> { expectedLocalPath }, "File manually deleted/renamed locally", "Lock Released (Undo)");
+                                    }
+                                }
+                            } catch { }
                         }
                     }
                 }
@@ -912,6 +961,35 @@ namespace OpenEDMShellExtension.Core
             if (fullPath.StartsWith(baseNorm, StringComparison.OrdinalIgnoreCase))
                 return fullPath.Substring(baseNorm.Length);
             return null;
+        }
+
+        private static void UpdateStateFile(string breadcrumbRoot, IEnumerable<string> localFiles)
+        {
+            string openedmStatePath = Path.Combine(breadcrumbRoot, ".openedmstate");
+            var stateDict = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+            if (File.Exists(openedmStatePath))
+            {
+                foreach (var line in File.ReadAllLines(openedmStatePath))
+                {
+                    var parts = line.Split('|');
+                    if (parts.Length == 2 && long.TryParse(parts[1], out long ticks))
+                    {
+                        stateDict[parts[0]] = ticks;
+                    }
+                }
+            }
+            foreach (var localFile in localFiles)
+            {
+                string relativePath = GetRelativePath(breadcrumbRoot, localFile);
+                if (relativePath != null && File.Exists(localFile))
+                {
+                    stateDict[relativePath] = File.GetLastWriteTimeUtc(localFile).Ticks;
+                }
+            }
+            var stateLines = stateDict.Select(kv => $"{kv.Key}|{kv.Value}").ToList();
+            if (File.Exists(openedmStatePath)) { File.SetAttributes(openedmStatePath, FileAttributes.Normal); }
+            File.WriteAllLines(openedmStatePath, stateLines);
+            File.SetAttributes(openedmStatePath, FileAttributes.Hidden | FileAttributes.System);
         }
     }
 

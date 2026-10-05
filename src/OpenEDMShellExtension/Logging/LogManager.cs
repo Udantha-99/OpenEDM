@@ -66,7 +66,7 @@ namespace OpenEDMShellExtension.Logging
                 string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                 int fileCount = pushedFiles?.Count ?? 0;
                 string fileNames = pushedFiles != null && pushedFiles.Count > 0
-                    ? string.Join("; ", pushedFiles.Select(Path.GetFileName))
+                    ? string.Join("; ", pushedFiles)
                     : "(none)";
 
                 // Construct a raw JSON string for the payload
@@ -95,7 +95,7 @@ namespace OpenEDMShellExtension.Logging
         private static string EscapeJson(string value)
         {
             if (string.IsNullOrEmpty(value)) return "";
-            return value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r");
+            return value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
         }
         private static string GetCurrentUsername()
         {

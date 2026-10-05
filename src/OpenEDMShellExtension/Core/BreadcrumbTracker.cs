@@ -33,8 +33,11 @@ namespace OpenEDMShellExtension.Core
 
             string breadcrumbPath = Path.Combine(localDirectory, BreadcrumbFileName);
 
-            // Write the server origin path as UTF-8 without BOM, with a trailing newline
-            // for robustness when read back.
+            if (File.Exists(breadcrumbPath))
+            {
+                var attrs = File.GetAttributes(breadcrumbPath);
+                File.SetAttributes(breadcrumbPath, attrs & ~(FileAttributes.Hidden | FileAttributes.System | FileAttributes.ReadOnly));
+            }
             File.WriteAllText(breadcrumbPath, serverSourcePath.TrimEnd('\\') + Environment.NewLine);
 
             // Mark hidden + system so it stays out of the user's way.

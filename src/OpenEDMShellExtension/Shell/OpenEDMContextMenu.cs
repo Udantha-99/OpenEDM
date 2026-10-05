@@ -139,30 +139,35 @@ namespace OpenEDMShellExtension.Shell
             return bmp;
         }
 
-        private static Image GetSyncIcon() => DrawIcon(Color.DodgerBlue, g => {
+        private static Image _syncIcon;
+        private static Image _checkOutIcon;
+        private static Image _checkInIcon;
+        private static Image _undoIcon;
+
+        private static Image GetSyncIcon() => _syncIcon ?? (_syncIcon = DrawIcon(Color.DodgerBlue, g => {
             using (var p = new Pen(Color.DodgerBlue, 2)) {
                 g.DrawLine(p, 8, 2, 8, 14); g.DrawLine(p, 8, 14, 4, 10); g.DrawLine(p, 8, 14, 12, 10);
             }
-        });
+        }));
 
-        private static Image GetCheckOutIcon() => DrawIcon(Color.MediumSeaGreen, g => {
+        private static Image GetCheckOutIcon() => _checkOutIcon ?? (_checkOutIcon = DrawIcon(Color.MediumSeaGreen, g => {
             using (var p = new Pen(Color.MediumSeaGreen, 2)) {
                 g.DrawLine(p, 2, 14, 6, 14); g.DrawLine(p, 2, 14, 2, 10);
                 g.DrawLine(p, 2, 10, 10, 2); g.DrawLine(p, 10, 2, 14, 6); g.DrawLine(p, 14, 6, 6, 14);
             }
-        });
+        }));
 
-        private static Image GetCheckInIcon() => DrawIcon(Color.DodgerBlue, g => {
+        private static Image GetCheckInIcon() => _checkInIcon ?? (_checkInIcon = DrawIcon(Color.DodgerBlue, g => {
             using (var p = new Pen(Color.DodgerBlue, 2)) {
                 g.DrawLine(p, 3, 8, 7, 12); g.DrawLine(p, 7, 12, 14, 3);
             }
-        });
+        }));
 
-        private static Image GetUndoIcon() => DrawIcon(Color.Crimson, g => {
+        private static Image GetUndoIcon() => _undoIcon ?? (_undoIcon = DrawIcon(Color.Crimson, g => {
             using (var p = new Pen(Color.Crimson, 2)) {
                 g.DrawArc(p, 2, 2, 12, 12, 90, 270); g.DrawLine(p, 2, 8, 6, 8); g.DrawLine(p, 2, 8, 2, 4);
             }
-        });
+        }));
 
         private void LaunchHelper(string command, string arg)
         {

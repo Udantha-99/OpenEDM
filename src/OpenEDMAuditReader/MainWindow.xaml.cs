@@ -431,10 +431,7 @@ namespace OpenEDMAuditReader
                         }
                     }
 
-                    foreach (var file in oldFiles)
-                    {
-                        File.Delete(file);
-                    }
+
 
                     MessageBox.Show($"Archived {oldFiles.Count} log files.", "Archive Complete", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
@@ -469,7 +466,13 @@ namespace OpenEDMAuditReader
                     var lines = new List<string> { "Project,File,User,Check-Out Time,Check-In Time,Status" };
                     foreach (var s in view)
                     {
-                        lines.Add($"\"{s.Project}\",\"{s.File}\",\"{s.User}\",\"{s.CheckOutTimeDisplay}\",\"{s.CheckInTimeDisplay}\",\"{s.Status}\"");
+                        string p = s.Project?.Replace("\"", "\"\"") ?? ""; 
+                        if (p.StartsWith("=") || p.StartsWith("+") || p.StartsWith("-") || p.StartsWith("@")) p = "'" + p;
+                        string f = s.File?.Replace("\"", "\"\"") ?? ""; 
+                        if (f.StartsWith("=") || f.StartsWith("+") || f.StartsWith("-") || f.StartsWith("@")) f = "'" + f;
+                        string u = s.User?.Replace("\"", "\"\"") ?? ""; 
+                        if (u.StartsWith("=") || u.StartsWith("+") || u.StartsWith("-") || u.StartsWith("@")) u = "'" + u;
+                        lines.Add($"\"{p}\",\"{f}\",\"{u}\",\"{s.CheckOutTimeDisplay}\",\"{s.CheckInTimeDisplay}\",\"{s.Status}\"");
                     }
                     File.WriteAllLines(dialog.FileName, lines);
                     MessageBox.Show("Export complete.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -481,32 +484,43 @@ namespace OpenEDMAuditReader
             }
         }
 
-        private void BtnScanLocks_Click(object sender, RoutedEventArgs e)
+        private async void BtnScanLocks_Click(object sender, RoutedEventArgs e)
         {
-            string lockPath = Configuration.LockPath;
-            if (string.IsNullOrWhiteSpace(lockPath) || !Directory.Exists(lockPath))
+            if (sender is System.Windows.Controls.Button btn) btn.IsEnabled = false;
+            try
             {
-                MessageBox.Show("Lock directory does not exist or is not reachable: " + lockPath, "Directory Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
-                dgvActiveLocks.ItemsSource = new List<ActiveLockInfo>();
-                return;
-            }
-
-            var locks = new List<ActiveLockInfo>();
-            foreach (var file in Directory.GetFiles(lockPath, "*.openedmlock", SearchOption.AllDirectories))
-            {
-                try
+                string lockPath = Configuration.LockPath;
+                if (string.IsNullOrWhiteSpace(lockPath) || !Directory.Exists(lockPath))
                 {
-                    string username = File.ReadAllText(file).Trim();
-                    locks.Add(new ActiveLockInfo
-                    {
-                        FilePath = file,
-                        Username = username,
-                        CreationDate = File.GetCreationTime(file)
-                    });
+                    MessageBox.Show("Lock directory does not exist or is not reachable: " + lockPath, "Directory Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    dgvActiveLocks.ItemsSource = new List<ActiveLockInfo>();
+                    return;
                 }
-                catch { }
+
+                var locks = await Task.Run(() => {
+                    var result = new List<ActiveLockInfo>();
+                    foreach (var file in Directory.GetFiles(lockPath, "*.openedmlock", SearchOption.AllDirectories))
+                    {
+                        try
+                        {
+                            string username = File.ReadAllText(file).Trim();
+                            result.Add(new ActiveLockInfo
+                            {
+                                FilePath = file,
+                                Username = username,
+                                CreationDate = File.GetCreationTime(file)
+                            });
+                        }
+                        catch { }
+                    }
+                    return result;
+                });
+                dgvActiveLocks.ItemsSource = locks;
             }
-            dgvActiveLocks.ItemsSource = locks;
+            finally
+            {
+                if (sender is System.Windows.Controls.Button b) b.IsEnabled = true;
+            }
         }
 
         private void BtnSelectAllLocks_Click(object sender, RoutedEventArgs e)
@@ -519,7 +533,7 @@ namespace OpenEDMAuditReader
             dgvActiveLocks.UnselectAll();
         }
 
-        private void BtnForceUnlock_Click(object sender, RoutedEventArgs e)
+        private async void BtnForceUnlock_Click(object sender, RoutedEventArgs e)
         {
             var selectedItems = dgvActiveLocks.SelectedItems.Cast<ActiveLockInfo>().ToList();
             if (selectedItems.Count == 0)
@@ -532,11 +546,13 @@ namespace OpenEDMAuditReader
             {
                 try
                 {
-                    foreach (var selected in selectedItems)
-                    {
-                        File.Delete(selected.FilePath);
-                        OpenEDMShellExtension.Logging.LogManager.AppendCheckInEntry("ForceUnlock", new List<string> { selected.FilePath }, "Admin Force Unlock", "Admin Force Unlock");
-                    }
+                    await Task.Run(() => {
+                        foreach (var selected in selectedItems)
+                        {
+                            File.Delete(selected.FilePath);
+                            OpenEDMShellExtension.Logging.LogManager.AppendCheckInEntry("ForceUnlock", new List<string> { selected.FilePath }, "Admin Force Unlock", "Admin Force Unlock");
+                        }
+                    });
                     MessageBox.Show($"{selectedItems.Count} lock(s) removed.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     BtnScanLocks_Click(null, null);
                 }

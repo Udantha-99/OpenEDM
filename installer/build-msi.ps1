@@ -132,7 +132,6 @@ if (-not (Test-Path (Join-Path $auditReaderPublishDir "OpenEDMAuditReader.exe"))
 }
 Write-Host "   Build OK. All required files present." -ForegroundColor Green
 
-Copy-Item -Path (Join-Path $projRoot "private_key.xml") -Destination $binDir -Force
 
 # ─── Step 3: Compile WiX source ─────────────────────────────────────────────
 Write-Host "[3/4] Compiling WiX installer..." -ForegroundColor Cyan
