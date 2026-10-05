@@ -73,7 +73,6 @@
 
   <ItemGroup>
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.3.1" />
-    <PackageReference Include="BouncyCastle.Cryptography" Version="2.3.1" />
     <PackageReference Include="SharpShell" Version="2.7.2" />
   </ItemGroup>
 

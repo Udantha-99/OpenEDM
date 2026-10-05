@@ -28,7 +28,7 @@ $installerDir = $PSScriptRoot
 $outputDir    = Join-Path $installerDir "output"
 $wxsFile      = Join-Path $installerDir "Product.wxs"
 $msiOut       = Join-Path $outputDir "OpenEDMShellExtension.msi"
-$msbuild      = "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe"
+$msbuild      = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
 
 Write-Host ""
 Write-Host "===============================================" -ForegroundColor Cyan
@@ -99,8 +99,8 @@ if (-not (Test-Path $msbuild)) {
     exit 1
 }
 
-& $msbuild (Join-Path $projRoot "OpenEDMEnterprise.sln") /t:Restore /p:Configuration=Release /verbosity:minimal
-& $msbuild (Join-Path $projRoot "OpenEDMEnterprise.sln") /p:Configuration=Release /verbosity:minimal
+& $msbuild (Join-Path $projRoot "src\OpenEDMShellExtension\OpenEDMShellExtension.csproj") /p:Configuration=Release /verbosity:minimal
+& $msbuild (Join-Path $projRoot "src\OpenEDMHelper\OpenEDMHelper.csproj") /p:Configuration=Release /verbosity:minimal
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Build failed. Check MSBuild output above."
     exit 1
